@@ -1,0 +1,180 @@
+// Supabase Postgres. DATABASE_URL is the pooled connection (port 6543,
+// ?pgbouncer=true) used at runtime; DIRECT_URL (port 5432) is used by
+// `prisma db push` for schema changes. Every table has RLS enabled with no
+// policies (prisma/enable-rls.sql), so the public Supabase key cannot read
+// them; Prisma connects as the postgres role, which bypasses RLS.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  name          String?
+  plan          String   @default("free") // free | pro
+  auditCredits  Int      @default(1)
+  whopUserId    String?
+  whopMembershipId String?
+  lastLoginAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  audits   Audit[]
+  feedback Feedback[]
+  events   Event[]
+}
+
+// Observability: one row per auth action, audit stage, external API call,
+// webhook and error. Query it in the Supabase table editor or SQL editor.
+model Event {
+  id         String   @id @default(cuid())
+  type       String   // e.g. auth.login, audit.stage, api.call, webhook.whop, error
+  level      String   @default("info") // info | warn | error
+  userId     String?
+  auditId    String?
+  provider   String?  // openai | perplexity | gemini | anthropic | dataforseo | terac | whop
+  operation  String?  // e.g. engine.ask, llm.json, stage name
+  status     String?  // ok | error | HTTP status
+  durationMs Int?
+  message    String?
+  data       Json?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([type, createdAt])
+  @@index([auditId])
+  @@index([userId, createdAt])
+}
+
+model Audit {
+  id          String    @id @default(cuid())
+  userId      String
+  url         String
+  domain      String
+  status      String    @default("queued") // queued | crawling | profiling | questions | querying | analyzing | done | blocked | failed
+  stage       String?   // human-readable progress message
+  error       String?
+
+  overallScore      Int?
+  readabilityScore  Int?
+  visibilityTop3    Float?  // 0..1 share of engine runs where the brand ranked in the top 3
+  visibilityTop5    Float?  // 0..1 share of engine runs where the brand ranked in the top 5
+  citationRate      Float?  // 0..1 share of engine runs citing the site's own domain
+
+  crawlReport   String?   // JSON: CrawlReport
+  profile       String?   // JSON: BusinessProfile
+  engineSummary String?   // JSON: per-engine metrics
+  configSnapshot String?  // JSON: which providers were enabled for this run
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questions AuditQuestion[]
+  runs      EngineRun[]
+  findings  Finding[]
+  feedback  Feedback[]
+
+  @@index([userId, createdAt])
+}
+
+model AuditQuestion {
+  id              String  @id @default(cuid())
+  auditId         String
+  text            String
+  intent          String  // discovery | comparison | problem | local | pricing
+  seedKeyword     String?
+  monthlyVolume   Int?    // null when no search-volume provider is configured
+  volumeSource    String? // e.g. "dataforseo:google_ads"
+  rejectedReason  String? // set when the bias filter dropped the question
+
+  audit Audit       @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  runs  EngineRun[]
+}
+
+model EngineRun {
+  id            String   @id @default(cuid())
+  auditId       String
+  questionId    String
+  engine        String   // openai | perplexity | gemini | anthropic
+  model         String
+  status        String   // ok | error
+  error         String?
+  answerText    String?
+  citations     String?  // JSON: {url,title,domain}[]
+  rankedEntities String? // JSON: {name,domain?,position}[] in answer order
+  brandPosition Int?     // 1-based, null when absent
+  brandCited    Boolean  @default(false)
+  latencyMs     Int?
+  createdAt     DateTime @default(now())
+
+  audit    Audit         @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  question AuditQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model Finding {
+  id        String  @id @default(cuid())
+  auditId   String
+  category  String  // crawl | rendering | content | schema | visibility | competitor
+  severity  String  // critical | high | medium | low | info
+  title     String
+  evidence  String  // JSON: {label, value}[] — the raw observations backing the finding
+  why       String
+  fix       String
+  impact    Int     @default(0) // points the readability score would recover if fixed
+
+  audit Audit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+}
+
+// Human input. Source "user" = in-app rating by the business owner; "terac" =
+// a Terac participant who reached the study page through an opportunity link.
+model Feedback {
+  id                  String   @id @default(cuid())
+  source              String
+  auditId             String?
+  userId              String?
+  studyId             String?
+  teracSubmissionId   String?
+  kind                String   // question_relevance | report_clarity | general
+  payload             String   // JSON
+  createdAt           DateTime @default(now())
+
+  audit Audit?      @relation(fields: [auditId], references: [id], onDelete: SetNull)
+  user  User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  study TeracStudy? @relation(fields: [studyId], references: [id], onDelete: SetNull)
+
+  @@index([studyId])
+}
+
+model TeracStudy {
+  id                 String   @id @default(cuid())
+  kind               String   // question_relevance | report_clarity
+  title              String
+  auditId            String?  // audit whose questions/report the participants review
+  teracProjectId     String?
+  teracOpportunityId String?
+  status             String   @default("local_draft") // local_draft | draft | active | completed | ...
+  numParticipants    Int      @default(10)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  feedback Feedback[]
+}
+
+model WebhookEvent {
+  id         String   @id // provider delivery id, used to deduplicate retries
+  provider   String
+  type       String
+  payload    String
+  receivedAt DateTime @default(now())
+}

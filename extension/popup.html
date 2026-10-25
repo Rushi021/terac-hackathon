@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <strong>AI Visibility Audit</strong>
+      <button id="logout" class="link hidden">Log out</button>
+    </header>
+
+    <section id="view-auth" class="hidden">
+      <p class="muted">Log in to check how AI assistants see your business.</p>
+      <form id="auth-form">
+        <input name="email" type="email" placeholder="Email" required />
+        <input name="password" type="password" placeholder="Password (8+ characters)" required />
+        <button type="submit" id="auth-submit">Log in</button>
+      </form>
+      <button id="auth-toggle" class="link">New here? Create an account</button>
+    </section>
+
+    <section id="view-main" class="hidden">
+      <form id="audit-form">
+        <label for="url">Your website</label>
+        <input id="url" name="url" placeholder="yourbusiness.com" required />
+        <button type="submit" id="audit-submit">Run audit</button>
+      </form>
+      <p id="credits" class="muted small"></p>
+      <div id="recent"></div>
+    </section>
+
+    <section id="view-audit" class="hidden">
+      <button id="back" class="link">← Back</button>
+      <h2 id="a-title"></h2>
+      <p id="a-stage" class="muted small"></p>
+      <div id="a-progress" class="progress"><div></div></div>
+      <div id="a-scores" class="scores"></div>
+      <div id="a-findings"></div>
+      <button id="a-open">Open full report</button>
+    </section>
+
+    <p id="error" class="error"></p>
+
+    <details class="settings">
+      <summary>Settings</summary>
+      <label for="api">Server URL</label>
+      <input id="api" placeholder="http://localhost:3000" />
+      <button id="save-api" class="secondary">Save</button>
+    </details>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

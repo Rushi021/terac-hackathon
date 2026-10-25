@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "AI Visibility Audit",
+  "version": "0.1.0",
+  "description": "See how often AI assistants recommend your business, and exactly why.",
+  "action": { "default_popup": "popup.html", "default_title": "AI Visibility Audit" },
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["http://localhost:3000/*"]
+}

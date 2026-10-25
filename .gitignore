@@ -1,0 +1,7 @@
+.DS_Store
+.env
+**/.env
+web/node_modules/
+web/.next/
+web/*.db
+web/*.db-journal

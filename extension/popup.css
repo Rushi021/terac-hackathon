@@ -1,0 +1,26 @@
+body { width: 360px; margin: 0; padding: 12px 14px 14px; font: 14px/1.45 -apple-system, "Segoe UI", system-ui, sans-serif; color: #16181d; background: #f6f5f1; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+h2 { font-size: 16px; margin: 6px 0 2px; }
+.hidden { display: none !important; }
+.muted { color: #5f6470; }
+.small { font-size: 12px; }
+.error { color: #c2302b; font-size: 12px; min-height: 0; margin: 6px 0 0; }
+label { display: block; font-size: 12px; font-weight: 600; margin: 4px 0; }
+input { width: 100%; box-sizing: border-box; font: inherit; padding: 8px 10px; border: 1px solid #e4e2db; border-radius: 8px; margin-bottom: 8px; background: #fff; }
+button { font: inherit; font-weight: 600; width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #1f5eff; background: #1f5eff; color: #fff; cursor: pointer; }
+button:disabled { opacity: 0.55; }
+button.secondary { background: #fff; color: #16181d; border-color: #e4e2db; }
+button.link { width: auto; background: none; border: 0; color: #1f5eff; padding: 4px 0; font-weight: 500; }
+.scores { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+.score { background: #fff; border: 1px solid #e4e2db; border-radius: 10px; padding: 8px 10px; }
+.score b { display: block; font-size: 22px; }
+.score span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #5f6470; }
+.good { color: #11845b; } .warn { color: #b26a00; } .bad { color: #c2302b; }
+.finding { background: #fff; border: 1px solid #e4e2db; border-left: 4px solid #e4e2db; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; }
+.finding.critical { border-left-color: #c2302b; } .finding.high { border-left-color: #b26a00; } .finding.medium { border-left-color: #d9b100; }
+.finding p { margin: 4px 0 0; font-size: 12px; }
+.progress { height: 5px; background: #eceae4; border-radius: 99px; overflow: hidden; margin: 8px 0; }
+.progress div { height: 100%; width: 5%; background: #1f5eff; transition: width .4s; }
+.recent-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e4e2db; cursor: pointer; }
+.settings { margin-top: 14px; font-size: 12px; }
+.settings summary { cursor: pointer; color: #5f6470; }
